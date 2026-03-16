@@ -4,13 +4,12 @@ import (
 	"context"
 	"time"
 
-	"github.com/dehwyy/tracerfx/pkg/tracerfx/caller"
-	"github.com/dehwyy/tracerfx/pkg/tracerfx/log"
+	"github.com/dehwyy/tracerfx/pkg/tracer/caller"
+	"github.com/dehwyy/tracerfx/pkg/tracer/log"
 	"go.opentelemetry.io/otel"
 )
 
-func Start(ctx context.Context) (context.Context, *dspan) {
-	spanName := caller.GetRuntimeFunc(2)
+func Start(ctx context.Context, spanName string, attrs ...Attribute) (context.Context, *dspan) {
 	ctx, tSpan := otel.Tracer("").Start(ctx, spanName)
 	logger := log.FromContext(ctx)
 
@@ -20,11 +19,17 @@ func Start(ctx context.Context) (context.Context, *dspan) {
 		Attributes: make(map[string]any),
 		StartTime:  time.Now(),
 		SpanName:   spanName,
+		SpanCaller: caller.GetRuntimeFunc(2),
+	}
+
+	for _, attr := range attrs {
+		s.WithAttribute(attr.Key, attr.Value)
 	}
 
 	logger.Info(
 		"Span started",
 		"span_name", spanName,
+		"span_caller", s.SpanCaller,
 		"trace_id", s.TraceID(),
 	)
 

@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/dehwyy/tracerfx/pkg/tracerfx/log"
+	"github.com/dehwyy/tracerfx/pkg/tracer/log"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -15,4 +15,5 @@ type dspan struct {
 	Mu         sync.Mutex
 	StartTime  time.Time
 	SpanName   string
+	SpanCaller string
 }

@@ -3,7 +3,7 @@ package tracer
 import (
 	"context"
 
-	"github.com/dehwyy/tracerfx/pkg/tracerfx/log"
+	"github.com/dehwyy/tracerfx/pkg/tracer/log"
 
 	"go.uber.org/fx"
 )

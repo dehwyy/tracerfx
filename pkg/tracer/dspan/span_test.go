@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/dehwyy/tracerfx/pkg/tracerfx/log"
+	"github.com/dehwyy/tracerfx/pkg/tracer/log"
 )
 
 func TestSpanStartAndEnd(t *testing.T) {
@@ -13,7 +13,7 @@ func TestSpanStartAndEnd(t *testing.T) {
 	logger := log.NewZerologLogger()
 	ctx = log.ContextWithLogger(ctx, logger)
 
-	ctxTrace, span := Start(ctx)
+	ctxTrace, span := Start(ctx, "test_span", Attr("test_key", "test_value"))
 	if ctxTrace == nil {
 		t.Fatal("context is nil")
 	}
@@ -40,9 +40,8 @@ func TestSpanStartAndEnd(t *testing.T) {
 
 func TestSpanErr(t *testing.T) {
 	ctx := context.Background()
-	_, span := Start(ctx)
+	_, span := Start(ctx, "test_span", Attr("error_context", "test_stage"))
 
-	span.WithAttribute("error_context", "test_stage")
 	err := errors.New("test error")
 	if span.Err(err) != err {
 		t.Fatal("expected error to be returned")
@@ -84,7 +83,7 @@ func TestExtractFields(t *testing.T) {
 
 func TestAddAttributeToSpanConcurrency(t *testing.T) {
 	ctx := context.Background()
-	_, span := Start(ctx)
+	_, span := Start(ctx, "test_span", Attr("test_key", "test_value"))
 
 	done := make(chan bool)
 	for i := 0; i < 100; i++ {

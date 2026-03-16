@@ -1,7 +1,7 @@
 package tracer
 
 import (
-	"github.com/dehwyy/tracerfx/pkg/tracerfx/log"
+	"github.com/dehwyy/tracerfx/pkg/tracer/log"
 
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/sdk/resource"

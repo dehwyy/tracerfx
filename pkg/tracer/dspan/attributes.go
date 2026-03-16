@@ -8,6 +8,15 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
+type Attribute struct {
+	Key   string
+	Value any
+}
+
+func Attr(key string, value any) Attribute {
+	return Attribute{key, value}
+}
+
 func extractFields(key string, value any) map[string]any {
 	result := make(map[string]any)
 
