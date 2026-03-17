@@ -33,5 +33,6 @@ func FxModule(tracerOpts ...Option) fx.Option {
 				return provider
 			},
 		),
+		fx.Invoke(func(p *Provider) {}),
 	)
 }
