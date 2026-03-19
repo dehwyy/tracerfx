@@ -17,6 +17,20 @@ func Attr(key string, value any) Attribute {
 	return Attribute{key, value}
 }
 
+func (s *dspan) WithAttribute(key string, value any) *dspan {
+	s.Mu.Lock()
+	defer s.Mu.Unlock()
+
+	extracted := extractFields(key, value)
+
+	for k, v := range extracted {
+		s.Attributes[k] = v
+		setAttr(s.TraceSpan, k, v)
+	}
+
+	return s
+}
+
 func extractFields(key string, value any) map[string]any {
 	result := make(map[string]any)
 
