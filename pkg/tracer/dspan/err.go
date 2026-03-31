@@ -12,7 +12,7 @@ func (s *dspan) Err(err error) error {
 	args := []any{
 		"span_name", s.SpanName,
 		"trace_id", s.TraceID(),
-		"error", err,
+		"error", err.Error(),
 	}
 
 	for k, v := range s.Attributes {
