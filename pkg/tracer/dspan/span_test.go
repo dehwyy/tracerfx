@@ -48,6 +48,15 @@ func TestSpanErr(t *testing.T) {
 	}
 }
 
+func TestSpanErrNil(t *testing.T) {
+	ctx := context.Background()
+	_, span := Start(ctx, "test_span")
+
+	if span.Err(nil) != nil {
+		t.Fatal("expected nil to be returned for nil error")
+	}
+}
+
 func TestExtractFields(t *testing.T) {
 	type Nested struct {
 		Value int

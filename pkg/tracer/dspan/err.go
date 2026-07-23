@@ -3,6 +3,10 @@ package dspan
 import "go.opentelemetry.io/otel/codes"
 
 func (s *dspan) Err(err error) error {
+	if err == nil {
+		return nil
+	}
+
 	s.TraceSpan.SetStatus(codes.Error, err.Error())
 	s.TraceSpan.RecordError(err)
 
