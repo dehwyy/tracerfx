@@ -1,6 +1,10 @@
 package dspan
 
-import "time"
+import (
+	"time"
+
+	"github.com/dehwyy/tracerfx/pkg/tracer/log"
+)
 
 func (s *dspan) End() {
 	s.TraceSpan.End()
@@ -20,5 +24,5 @@ func (s *dspan) End() {
 		args = append(args, k, v)
 	}
 
-	s.Logger.Info("Span ended", args...)
+	log.Debug(s.Logger, "Span ended", args...)
 }

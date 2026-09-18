@@ -13,6 +13,10 @@ func NewZapLogger(logger *zap.Logger) Logger {
 	return &zapLogger{logger: logger.Sugar()}
 }
 
+func (z *zapLogger) Debug(msg string, args ...any) {
+	z.logger.Debugw(msg, args...)
+}
+
 func (z *zapLogger) Info(msg string, args ...any) {
 	z.logger.Infow(msg, args...)
 }

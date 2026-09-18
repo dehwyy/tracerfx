@@ -8,6 +8,16 @@ type Logger interface {
 	With(args ...any) Logger
 }
 
+type DebugLogger interface {
+	Debug(msg string, args ...any)
+}
+
+func Debug(l Logger, msg string, args ...any) {
+	if d, ok := l.(DebugLogger); ok {
+		d.Debug(msg, args...)
+	}
+}
+
 var defaultLogger Logger
 
 func SetDefaultLogger(l Logger) {

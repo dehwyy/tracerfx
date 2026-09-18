@@ -1,18 +1,49 @@
 package log
 
 import (
+	"io"
 	"os"
+	"sync"
 
 	"github.com/rs/zerolog"
 )
+
+const LevelEnv = "TRACERFX_LOG_LEVEL"
+
+var (
+	levelOnce sync.Once
+	level     zerolog.Level
+)
+
+func envLevel() zerolog.Level {
+	levelOnce.Do(func() {
+		level = zerolog.InfoLevel
+		if v := os.Getenv(LevelEnv); v != "" {
+			if parsed, err := zerolog.ParseLevel(v); err == nil {
+				level = parsed
+			}
+		}
+	})
+	return level
+}
 
 type zerologLogger struct {
 	logger zerolog.Logger
 }
 
 func NewZerologLogger() Logger {
-	logger := zerolog.New(os.Stdout).With().Timestamp().Logger()
+	return newZerologLogger(os.Stdout, envLevel())
+}
+
+func newZerologLogger(w io.Writer, lvl zerolog.Level) Logger {
+	logger := zerolog.New(w).Level(lvl).With().Timestamp().Logger()
 	return &zerologLogger{logger: logger}
+}
+
+func (z *zerologLogger) Debug(msg string, args ...any) {
+	event := z.logger.Debug()
+	z.appendFields(event, args...)
+	event.Msg(msg)
 }
 
 func (z *zerologLogger) Info(msg string, args ...any) {
