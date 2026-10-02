@@ -26,12 +26,10 @@ func Start(ctx context.Context, spanName string, attrs ...Attribute) (context.Co
 		s.WithAttribute(attr.Key, attr.Value)
 	}
 
-	log.Debug(
-		logger,
+	logger.Debug(
 		"Span started",
 		"span_name", spanName,
 		"span_caller", s.SpanCaller,
-		"trace_id", s.TraceID(),
 	)
 
 	return ctx, s

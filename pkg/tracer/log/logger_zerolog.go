@@ -27,12 +27,44 @@ func envLevel() zerolog.Level {
 	return level
 }
 
+type Option func(*config)
+
+type config struct {
+	writer io.Writer
+	level  zerolog.Level
+}
+
+func WithWriter(w io.Writer) Option {
+	return func(c *config) {
+		c.writer = w
+	}
+}
+
+func WithLevel(l Level) Option {
+	return func(c *config) {
+		c.level = l.zerolog()
+	}
+}
+
+func New(opts ...Option) Logger {
+	cfg := config{
+		writer: os.Stdout,
+		level:  envLevel(),
+	}
+
+	for _, opt := range opts {
+		opt(&cfg)
+	}
+
+	return newZerologLogger(cfg.writer, cfg.level)
+}
+
 type zerologLogger struct {
 	logger zerolog.Logger
 }
 
 func NewZerologLogger() Logger {
-	return newZerologLogger(os.Stdout, envLevel())
+	return New()
 }
 
 func newZerologLogger(w io.Writer, lvl zerolog.Level) Logger {
@@ -41,41 +73,37 @@ func newZerologLogger(w io.Writer, lvl zerolog.Level) Logger {
 }
 
 func (z *zerologLogger) Debug(msg string, args ...any) {
-	event := z.logger.Debug()
-	z.appendFields(event, args...)
-	event.Msg(msg)
+	z.emit(z.logger.Debug(), msg, args)
 }
 
 func (z *zerologLogger) Info(msg string, args ...any) {
-	event := z.logger.Info()
-	z.appendFields(event, args...)
-	event.Msg(msg)
+	z.emit(z.logger.Info(), msg, args)
+}
+
+func (z *zerologLogger) Warn(msg string, args ...any) {
+	z.emit(z.logger.Warn(), msg, args)
 }
 
 func (z *zerologLogger) Error(msg string, args ...any) {
-	event := z.logger.Error()
-	z.appendFields(event, args...)
-	event.Msg(msg)
+	z.emit(z.logger.Error(), msg, args)
 }
 
 func (z *zerologLogger) With(args ...any) Logger {
-	ctx := z.logger.With()
-	for i := 0; i < len(args); i += 2 {
-		if i+1 < len(args) {
-			if key, ok := args[i].(string); ok {
-				ctx = ctx.Interface(key, args[i+1])
-			}
-		}
+	if len(args) == 0 {
+		return z
 	}
-	return &zerologLogger{logger: ctx.Logger()}
+
+	child := z.logger.With().Fields(normalizeFields(args)).Logger()
+
+	return &zerologLogger{logger: child}
 }
 
-func (z *zerologLogger) appendFields(event *zerolog.Event, args ...any) {
-	for i := 0; i < len(args); i += 2 {
-		if i+1 < len(args) {
-			if key, ok := args[i].(string); ok {
-				event.Interface(key, args[i+1])
-			}
-		}
+func (z *zerologLogger) emit(event *zerolog.Event, msg string, args []any) {
+	if event == nil {
+		return
 	}
+	if len(args) > 0 {
+		event = event.Fields(normalizeFields(args))
+	}
+	event.Msg(msg)
 }

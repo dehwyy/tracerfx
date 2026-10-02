@@ -2,8 +2,6 @@ package dspan
 
 import (
 	"time"
-
-	"github.com/dehwyy/tracerfx/pkg/tracer/log"
 )
 
 func (s *dspan) End() {
@@ -16,7 +14,6 @@ func (s *dspan) End() {
 
 	args := []any{
 		"span_name", s.SpanName,
-		"trace_id", s.TraceID(),
 		"duration_ms", duration.Milliseconds(),
 	}
 
@@ -24,5 +21,5 @@ func (s *dspan) End() {
 		args = append(args, k, v)
 	}
 
-	log.Debug(s.Logger, "Span ended", args...)
+	s.Logger.Debug("Span ended", args...)
 }

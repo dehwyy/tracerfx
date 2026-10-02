@@ -1,6 +1,9 @@
 package dspan
 
-import "go.opentelemetry.io/otel/codes"
+import (
+	"github.com/dehwyy/tracerfx/pkg/tracer/log"
+	"go.opentelemetry.io/otel/codes"
+)
 
 func (s *dspan) Err(err error) error {
 	if err == nil {
@@ -15,8 +18,7 @@ func (s *dspan) Err(err error) error {
 
 	args := []any{
 		"span_name", s.SpanName,
-		"trace_id", s.TraceID(),
-		"error", err.Error(),
+		log.Err(err),
 	}
 
 	for k, v := range s.Attributes {
