@@ -15,10 +15,8 @@ type Logger interface {
 	With(args ...any) Logger
 }
 
-// Deprecated: Logger now includes Debug. Kept as an alias for one release.
 type DebugLogger = Logger
 
-// Deprecated: call l.Debug directly. Kept for one release.
 func Debug(l Logger, msg string, args ...any) {
 	l.Debug(msg, args...)
 }

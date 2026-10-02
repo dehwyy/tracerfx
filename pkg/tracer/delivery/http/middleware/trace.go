@@ -24,15 +24,12 @@ type traceConfig struct {
 
 type TraceOption func(*traceConfig)
 
-// WithRouteFunc sets the route template resolver. It is called after the next handler returns,
-// with the same *http.Request the handler received, so ServeMux patterns are visible.
 func WithRouteFunc(fn func(*http.Request) string) TraceOption {
 	return func(c *traceConfig) {
 		c.routeFunc = fn
 	}
 }
 
-// WithPropagation makes the middleware continue an incoming W3C traceparent. Off by default.
 func WithPropagation(trust bool) TraceOption {
 	return func(c *traceConfig) {
 		c.propagate = trust

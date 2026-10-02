@@ -12,7 +12,6 @@ import (
 
 const ConsumerSpanName = "nats.consumer"
 
-// InjectTraceContext extracts trace context from ctx and injects it into NATS message headers.
 func InjectTraceContext(ctx context.Context, msg *nats.Msg) {
 	if msg.Header == nil {
 		msg.Header = nats.Header{}
@@ -24,9 +23,6 @@ func InjectTraceContext(ctx context.Context, msg *nats.Msg) {
 	)
 }
 
-// ExtractTraceContext puts the remote span context from JetStream message headers into ctx.
-// It does not start a span: use ConsumerSpan and end it after the handler returns.
-// Compatible with brokerfx BeforeHandlerMiddleware signature.
 func ExtractTraceContext(ctx context.Context, msg jetstream.Msg) (context.Context, error) {
 	headers := msg.Headers()
 	if headers == nil {
@@ -39,7 +35,6 @@ func ExtractTraceContext(ctx context.Context, msg jetstream.Msg) (context.Contex
 	), nil
 }
 
-// ExtractCore puts the remote span context from a core NATS message into ctx.
 func ExtractCore(ctx context.Context, msg *nats.Msg) context.Context {
 	if msg == nil || msg.Header == nil {
 		return ctx
@@ -51,7 +46,6 @@ func ExtractCore(ctx context.Context, msg *nats.Msg) context.Context {
 	)
 }
 
-// InjectMap writes trace context into m, e.g. outbox headers.
 func InjectMap(ctx context.Context, m map[string]string) {
 	if m == nil {
 		return
@@ -60,7 +54,6 @@ func InjectMap(ctx context.Context, m map[string]string) {
 	otel.GetTextMapPropagator().Inject(ctx, propagation.MapCarrier(m))
 }
 
-// ExtractMap reads trace context from m.
 func ExtractMap(ctx context.Context, m map[string]string) context.Context {
 	if len(m) == 0 {
 		return ctx
@@ -69,7 +62,6 @@ func ExtractMap(ctx context.Context, m map[string]string) context.Context {
 	return otel.GetTextMapPropagator().Extract(ctx, propagation.MapCarrier(m))
 }
 
-// ConsumerSpan starts the consumer span; call the returned func after the handler finishes.
 func ConsumerSpan(ctx context.Context, subject string) (context.Context, func()) {
 	ctx, span := dspan.Start(
 		ctx,
