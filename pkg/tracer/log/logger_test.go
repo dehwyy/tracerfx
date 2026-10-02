@@ -252,6 +252,41 @@ func TestFromContextDoesNotDuplicateIDs(t *testing.T) {
 	require.Equal(t, 1, strings.Count(buf.String(), `"trace_id"`))
 }
 
+func TestFromContextNestedSpansNoDuplicateKeys(t *testing.T) {
+	var buf bytes.Buffer
+	parentID, err := trace.SpanIDFromHex("0102030405060708")
+	require.NoError(t, err)
+	childID, err := trace.SpanIDFromHex("1112131415161718")
+	require.NoError(t, err)
+	traceID, err := trace.TraceIDFromHex("0102030405060708090a0b0c0d0e0f10")
+	require.NoError(t, err)
+
+	parent := trace.ContextWithSpanContext(t.Context(), trace.NewSpanContext(trace.SpanContextConfig{
+		TraceID:    traceID,
+		SpanID:     parentID,
+		TraceFlags: trace.FlagsSampled,
+	}))
+	parent = ContextWithLogger(parent, New(WithWriter(&buf)))
+	parent = ContextWithLogger(parent, FromContext(parent).With("k", "v"))
+
+	child := trace.ContextWithSpanContext(parent, trace.NewSpanContext(trace.SpanContextConfig{
+		TraceID:    traceID,
+		SpanID:     childID,
+		TraceFlags: trace.FlagsSampled,
+	}))
+
+	FromContext(child).Info("msg")
+	FromContext(child).With("a", "b").Info("msg")
+
+	require.Equal(t, 2, strings.Count(buf.String(), `"trace_id"`))
+	require.Equal(t, 2, strings.Count(buf.String(), `"span_id"`))
+
+	for _, entry := range decode(t, &buf) {
+		require.Equal(t, childID.String(), entry["span_id"])
+		require.Equal(t, "v", entry["k"])
+	}
+}
+
 func TestDefault(t *testing.T) {
 	t.Cleanup(func() { SetDefaultLogger(nil) })
 

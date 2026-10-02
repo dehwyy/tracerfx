@@ -4,29 +4,31 @@ import "go.opentelemetry.io/otel/trace"
 
 type spanLogger struct {
 	Logger
+	base    Logger
 	traceID trace.TraceID
 	spanID  trace.SpanID
 }
 
 func newSpanLogger(base Logger, sc trace.SpanContext) Logger {
 	if bound, ok := base.(*spanLogger); ok {
-		base = bound.Logger
+		base = bound.base
 	}
 
+	return bindSpan(base, sc.TraceID(), sc.SpanID())
+}
+
+func bindSpan(base Logger, traceID trace.TraceID, spanID trace.SpanID) *spanLogger {
 	return &spanLogger{
 		Logger: base.With(
-			TraceIDKey, sc.TraceID().String(),
-			SpanIDKey, sc.SpanID().String(),
+			TraceIDKey, traceID.String(),
+			SpanIDKey, spanID.String(),
 		),
-		traceID: sc.TraceID(),
-		spanID:  sc.SpanID(),
+		base:    base,
+		traceID: traceID,
+		spanID:  spanID,
 	}
 }
 
 func (s *spanLogger) With(args ...any) Logger {
-	return &spanLogger{
-		Logger:  s.Logger.With(args...),
-		traceID: s.traceID,
-		spanID:  s.spanID,
-	}
+	return bindSpan(s.base.With(args...), s.traceID, s.spanID)
 }

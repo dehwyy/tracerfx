@@ -201,3 +201,30 @@ func TestStatusRecorderKeepsFlusherAndUnwrap(t *testing.T) {
 	require.Same(t, inner, recorder.Unwrap())
 	require.Equal(t, http.StatusOK, recorder.statusCode())
 }
+
+func TestTraceMiddlewarePreservesHijacker(t *testing.T) {
+	hijackable := make(chan bool, 1)
+	server := httptest.NewServer(TraceMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hijacker, ok := w.(http.Hijacker)
+		hijackable <- ok
+		if !ok {
+			return
+		}
+		conn, _, err := hijacker.Hijack()
+		if err != nil {
+			t.Errorf("hijack: %v", err)
+			return
+		}
+		if err := conn.Close(); err != nil {
+			t.Errorf("close: %v", err)
+		}
+	})))
+	t.Cleanup(server.Close)
+
+	resp, err := http.Get(server.URL)
+	if err == nil {
+		require.NoError(t, resp.Body.Close())
+	}
+
+	require.True(t, <-hijackable)
+}

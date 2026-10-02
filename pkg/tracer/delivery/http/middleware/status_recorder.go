@@ -1,6 +1,10 @@
 package middleware
 
-import "net/http"
+import (
+	"bufio"
+	"net"
+	"net/http"
+)
 
 type statusRecorder struct {
 	http.ResponseWriter
@@ -28,6 +32,22 @@ func (s *statusRecorder) Flush() {
 	if flusher, ok := s.ResponseWriter.(http.Flusher); ok {
 		flusher.Flush()
 	}
+}
+
+func (s *statusRecorder) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	hijacker, ok := s.ResponseWriter.(http.Hijacker)
+	if !ok {
+		return nil, nil, http.ErrNotSupported
+	}
+	return hijacker.Hijack()
+}
+
+func (s *statusRecorder) Push(target string, opts *http.PushOptions) error {
+	pusher, ok := s.ResponseWriter.(http.Pusher)
+	if !ok {
+		return http.ErrNotSupported
+	}
+	return pusher.Push(target, opts)
 }
 
 func (s *statusRecorder) Unwrap() http.ResponseWriter {
