@@ -27,6 +27,14 @@ func NewProvider(opts ...Option) *Provider {
 func (p *Provider) Start(ctx context.Context) error {
 	var err error
 
+	if p.options.sampleRatioErr != nil {
+		p.options.logger.Warn(
+			"tracer sample ratio ignored, sampling everything",
+			"error",
+			p.options.sampleRatioErr,
+		)
+	}
+
 	p.exporter, err = otlptracegrpc.New(
 		ctx,
 		append(
@@ -61,7 +69,7 @@ func (p *Provider) Start(ctx context.Context) error {
 			[]tracesdk.TracerProviderOption{
 				tracesdk.WithBatcher(p.exporter),
 				tracesdk.WithResource(res),
-				tracesdk.WithSampler(tracesdk.AlwaysSample()),
+				tracesdk.WithSampler(newSampler(p.options.sampleRatio)),
 			}, p.options.tracerProviderOptions...,
 		)...,
 	)

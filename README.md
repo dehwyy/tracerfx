@@ -60,6 +60,15 @@ func main() {
 }
 ```
 
+### Head sampling
+
+By default every trace is sampled (`AlwaysSample`, same as before). To keep a fraction of root traces set `TRACER_SAMPLE_RATIO` (0..1) or pass `tracer.WithSampleRatio(0.1)`; the option wins over the env.
+
+- ratio `1` (default, also for an empty or invalid value): `AlwaysSample`, behaviour unchanged.
+- ratio below `1`: `ParentBased(TraceIDRatioBased(ratio))` - the decision of a remote/local parent is followed, new roots are sampled by trace id.
+- an invalid env value (not a number, outside 0..1) is logged as a warning at start and treated as `1`.
+- head sampling drops errors together with the rest; to keep all errors use tail sampling in the collector. `tracer.WithTracerProviderOptions(tracesdk.WithSampler(...))` still overrides the sampler.
+
 ## Usage Examples (dspan)
 
 ### Basic Span Management

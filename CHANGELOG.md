@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.2.0 (proposed)
+
+Added:
+- `TRACER_SAMPLE_RATIO` env and `tracer.WithSampleRatio(ratio)` option. Default `1.0` keeps `AlwaysSample`; a ratio below 1 uses `ParentBased(TraceIDRatioBased(ratio))`. Invalid values fall back to 1.0 with a warning at start.
+
+Fixed:
+- none.
+
+No breaking changes: without the env/option nothing changes.
+
 ## v0.1.0 (proposed)
 
 Breaking (v0 minor):
