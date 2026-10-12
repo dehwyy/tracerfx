@@ -1,6 +1,9 @@
 package tracer
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/dehwyy/tracerfx/pkg/tracer/log"
 
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
@@ -16,6 +19,8 @@ type options struct {
 	traceGrpcOptions      []otlptracegrpc.Option
 	resourceOptions       []resource.Option
 	tracerProviderOptions []tracesdk.TracerProviderOption
+	sampleRatio           float64
+	sampleRatioErr        error
 }
 
 func newOptions(opts ...Option) *options {
@@ -28,17 +33,19 @@ func newOptions(opts ...Option) *options {
 	return &o
 }
 
-// defaultOptions by default we use basic values, you can extend this to use git.GetCommitInfo if available.
 func defaultOptions() options {
+	sampleRatio, sampleRatioErr := parseSampleRatio(os.Getenv(SampleRatioEnv))
+
 	return options{
 		host:           "localhost:4317",
 		serviceName:    "unknown-service",
 		serviceVersion: "v0.0.0",
 		logger:         log.NewZerologLogger(),
+		sampleRatio:    sampleRatio,
+		sampleRatioErr: sampleRatioErr,
 	}
 }
 
-// Option overrides behavior of Provider.
 type Option interface {
 	apply(*options)
 }
@@ -101,6 +108,24 @@ func WithTracerProviderOptions(opts ...tracesdk.TracerProviderOption) Option {
 	return optionFunc(
 		func(o *options) {
 			o.tracerProviderOptions = append(o.tracerProviderOptions, opts...)
+		},
+	)
+}
+
+func WithSampleRatio(ratio float64) Option {
+	return optionFunc(
+		func(o *options) {
+			if !validSampleRatio(ratio) {
+				o.sampleRatio = defaultSampleRatio
+				o.sampleRatioErr = fmt.Errorf(
+					"sample ratio %v is outside [0, 1]",
+					ratio,
+				)
+				return
+			}
+
+			o.sampleRatio = ratio
+			o.sampleRatioErr = nil
 		},
 	)
 }
