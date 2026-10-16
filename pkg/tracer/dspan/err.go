@@ -16,6 +16,13 @@ func (s *dspan) Err(err error) error {
 	s.Mu.Lock()
 	defer s.Mu.Unlock()
 
+	if s.light {
+		return s.errLight(
+			err,
+			expected,
+		)
+	}
+
 	if expected {
 		if !s.deferred {
 			s.TraceSpan.SetAttributes(
@@ -44,6 +51,10 @@ func (s *dspan) Err(err error) error {
 		err.Error(),
 	)
 	s.TraceSpan.RecordError(err)
+
+	if s.scope != nil && s.scope.batch == s {
+		s.scope.failed.Store(true)
+	}
 
 	s.Logger.Error(
 		"Span recorded error",

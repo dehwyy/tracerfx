@@ -4,9 +4,23 @@ import (
 	"time"
 
 	"github.com/dehwyy/tracerfx/pkg/tracer/log"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 func (s *dspan) End() {
+	if s.scope != nil && s.scope.batch == s {
+		s.TraceSpan.SetAttributes(
+			attribute.Bool(
+				batchFailedAttribute,
+				s.scope.failed.Load(),
+			),
+			attribute.Int64(
+				batchSuppressedAttribute,
+				s.scope.suppressed.Load(),
+			),
+		)
+	}
+
 	s.TraceSpan.End()
 
 	if s.fast && !log.DebugEnabled(s.Logger) {

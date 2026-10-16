@@ -15,7 +15,7 @@ func (s *dspan) appendPending(key string, value any) {
 }
 
 func (s *dspan) expandPending() {
-	if !s.deferred {
+	if !s.deferred || s.light {
 		return
 	}
 

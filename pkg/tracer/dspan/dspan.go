@@ -2,6 +2,7 @@ package dspan
 
 import (
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/dehwyy/tracerfx/pkg/tracer/log"
@@ -23,4 +24,7 @@ type dspan struct {
 	pendingBuf [pendingInline]pendingAttribute
 	deferred   bool
 	fast       bool
+	light      bool
+	scope      *batchScope
+	links      atomic.Int32
 }

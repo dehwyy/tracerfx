@@ -12,6 +12,21 @@ import (
 const callerSkipStart = 3
 
 func begin(ctx context.Context, spanName string, attrs []Attribute, callerSkip int) (context.Context, *dspan) {
+	if depthSuppresses(
+		spanDepth(),
+		spanName,
+	) {
+		if scope := activeScope(ctx); scope != nil {
+			return ctx, startLight(
+				ctx,
+				scope,
+				spanName,
+				attrs,
+				callerSkip,
+			)
+		}
+	}
+
 	if fastEnabled() {
 		return beginFast(
 			ctx,
