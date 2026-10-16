@@ -12,6 +12,7 @@ import (
 func FxModule(tracerOpts ...Option) fx.Option {
 	opts := newOptions(tracerOpts...)
 	log.SetDefaultLogger(opts.logger)
+	opts.registerExpectedErrors()
 
 	return fx.Module("tracer",
 		fx.Provide(
@@ -19,7 +20,7 @@ func FxModule(tracerOpts ...Option) fx.Option {
 				return opts.logger
 			},
 			func(lc fx.Lifecycle) *Provider {
-				provider := NewProvider(tracerOpts...)
+				provider := newProvider(opts)
 
 				lc.Append(fx.Hook{
 					OnStart: func(ctx context.Context) error {

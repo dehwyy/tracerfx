@@ -21,6 +21,8 @@ type options struct {
 	tracerProviderOptions []tracesdk.TracerProviderOption
 	sampleRatio           float64
 	sampleRatioErr        error
+	expectedErrors        []func(error) bool
+	expectedRegistered    bool
 }
 
 func newOptions(opts ...Option) *options {

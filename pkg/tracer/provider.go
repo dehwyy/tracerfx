@@ -19,8 +19,14 @@ type Provider struct {
 }
 
 func NewProvider(opts ...Option) *Provider {
+	return newProvider(newOptions(opts...))
+}
+
+func newProvider(opts *options) *Provider {
+	opts.registerExpectedErrors()
+
 	return &Provider{
-		options: newOptions(opts...),
+		options: opts,
 	}
 }
 
