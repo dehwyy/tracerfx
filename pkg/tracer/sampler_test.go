@@ -184,6 +184,7 @@ func TestSamplerRatioApproximatesFraction(t *testing.T) {
 }
 
 func TestProviderStartUsesSampleRatio(t *testing.T) {
+	restoreGlobalLevel(t)
 	t.Setenv(SampleRatioEnv, "0")
 
 	provider := NewProvider(WithHost("127.0.0.1:1"))
@@ -202,6 +203,7 @@ func TestProviderStartUsesSampleRatio(t *testing.T) {
 }
 
 func TestProviderStartDefaultSamplesEverything(t *testing.T) {
+	restoreGlobalLevel(t)
 	t.Setenv(SampleRatioEnv, "")
 
 	provider := NewProvider(WithHost("127.0.0.1:1"))
@@ -213,6 +215,7 @@ func TestProviderStartDefaultSamplesEverything(t *testing.T) {
 }
 
 func TestProviderStartWarnsOnInvalidRatio(t *testing.T) {
+	restoreGlobalLevel(t)
 	t.Setenv(SampleRatioEnv, "bad")
 
 	var buf bytes.Buffer

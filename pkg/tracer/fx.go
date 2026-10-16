@@ -10,6 +10,8 @@ import (
 
 // FxModule provides the tracer Provider and Logger to the Uber FX dependency injection container.
 func FxModule(tracerOpts ...Option) fx.Option {
+	log.SetGlobalLevelFromEnv()
+
 	opts := newOptions(tracerOpts...)
 	log.SetDefaultLogger(opts.logger)
 	opts.registerExpectedErrors()

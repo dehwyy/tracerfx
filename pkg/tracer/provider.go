@@ -3,6 +3,8 @@ package tracer
 import (
 	"context"
 
+	"github.com/dehwyy/tracerfx/pkg/tracer/log"
+
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
@@ -31,6 +33,8 @@ func newProvider(opts *options) *Provider {
 }
 
 func (p *Provider) Start(ctx context.Context) error {
+	log.SetGlobalLevelFromEnv()
+
 	var err error
 
 	if p.options.sampleRatioErr != nil {

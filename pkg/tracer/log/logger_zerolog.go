@@ -15,14 +15,18 @@ var (
 	level     zerolog.Level
 )
 
+func parseEnvLevel() zerolog.Level {
+	if v := os.Getenv(LevelEnv); v != "" {
+		if parsed, err := zerolog.ParseLevel(v); err == nil {
+			return parsed
+		}
+	}
+	return zerolog.InfoLevel
+}
+
 func envLevel() zerolog.Level {
 	levelOnce.Do(func() {
-		level = zerolog.InfoLevel
-		if v := os.Getenv(LevelEnv); v != "" {
-			if parsed, err := zerolog.ParseLevel(v); err == nil {
-				level = parsed
-			}
-		}
+		level = parseEnvLevel()
 	})
 	return level
 }

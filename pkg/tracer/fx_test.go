@@ -11,6 +11,7 @@ import (
 )
 
 func TestFxEventLoggerOption(t *testing.T) {
+	restoreGlobalLevel(t)
 	t.Cleanup(func() { log.SetDefaultLogger(nil) })
 
 	var buf bytes.Buffer
