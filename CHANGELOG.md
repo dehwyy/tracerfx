@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.3.0 (proposed)
+
+Added:
+- Expected errors. `tracer.WithExpectedErrors(predicates...)`, `dspan.RegisterExpectedErrors(predicates...)`, `dspan.ResetExpectedErrors()`. For an error that matches a predicate `span.Err` sets no span status and records no exception event, adds the attribute `error.expected=true`, logs at Debug as `Span recorded expected error` and returns the same error. Registration at `tracer.FxModule` build and at `tracer.NewProvider`. Env `TRACERFX_EXPECTED_ERRORS=off` (read once) restores the old behaviour. The library registers no predicates, so without registration nothing changes.
+- `log.SetGlobalLevelFromEnv()`.
+
+Changed:
+- Sampling at `TRACER_SAMPLE_RATIO` / `WithSampleRatio` below 1: spans that are not sampled are now `RecordOnly` (v0.2.0: `Drop`), the sampler is `ParentBased` with the ratio root and `RecordOnly` for unsampled local and remote parents. A span that ends with status Error is exported even when its trace is not sampled (alone, without its unsampled parents); sampled spans are exported once. `IsRecording()` is true for all spans at ratio below 1. Ratio 1, no env: `AlwaysSample` and a plain batcher, unchanged.
+- The zerolog global level is set from `TRACERFX_LOG_LEVEL` by `tracer.FxModule` (at build) and `Provider.Start`. Without the env it was Debug (the zerolog default) and is now Info. Debug lines of global zerolog loggers (brokerfx, ratelimitfx, circuitbreakerfx) disappear, and the global level is a lower bound for every zerolog logger in the process, including `log.New(log.WithLevel(log.LevelDebug))`. Back to the old output: `TRACERFX_LOG_LEVEL=debug`.
+- `tracer.FxModule` builds the `Provider` from the options it already built for the logger instead of parsing the options twice.
+
+Fixed:
+- none.
+
+No breaking changes to the public API. Behaviour changes are the default global log level and, at a sample ratio below 1, the sampling decision (both under Changed).
+
 ## v0.2.0 (proposed)
 
 Added:
