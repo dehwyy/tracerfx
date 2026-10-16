@@ -13,49 +13,41 @@ func (s *dspan) Err(err error) error {
 
 	expected := isExpectedError(err)
 
-	if expected {
-		s.TraceSpan.SetAttributes(
-			attribute.Bool(
-				expectedErrorAttribute,
-				true,
-			),
-		)
-	} else {
-		s.TraceSpan.SetStatus(
-			codes.Error,
-			err.Error(),
-		)
-		s.TraceSpan.RecordError(err)
-	}
-
 	s.Mu.Lock()
 	defer s.Mu.Unlock()
 
-	args := []any{
-		"span_name", s.SpanName,
-		log.Err(err),
-	}
-
-	for k, v := range s.Attributes {
-		args = append(
-			args,
-			k,
-			v,
-		)
-	}
-
 	if expected {
+		if !s.deferred {
+			s.TraceSpan.SetAttributes(
+				attribute.Bool(
+					expectedErrorAttribute,
+					true,
+				),
+			)
+		}
+
+		if s.fast && !log.DebugEnabled(s.Logger) {
+			return err
+		}
+
 		s.Logger.Debug(
 			"Span recorded expected error",
-			args...,
+			s.errorArgs(err)...,
 		)
 
 		return err
 	}
 
+	s.expandPending()
+	s.TraceSpan.SetStatus(
+		codes.Error,
+		err.Error(),
+	)
+	s.TraceSpan.RecordError(err)
+
 	s.Logger.Error(
 		"Span recorded error",
-		args...,
+		s.errorArgs(err)...,
 	)
 
 	return err

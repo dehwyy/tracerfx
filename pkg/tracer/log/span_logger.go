@@ -10,11 +10,13 @@ type spanLogger struct {
 }
 
 func newSpanLogger(base Logger, sc trace.SpanContext) Logger {
-	if bound, ok := base.(*spanLogger); ok {
-		base = bound.base
-	}
+	unwrapped, _, _, _ := boundSpan(base)
 
-	return bindSpan(base, sc.TraceID(), sc.SpanID())
+	return bindSpan(
+		unwrapped,
+		sc.TraceID(),
+		sc.SpanID(),
+	)
 }
 
 func bindSpan(base Logger, traceID trace.TraceID, spanID trace.SpanID) *spanLogger {

@@ -2,10 +2,16 @@ package dspan
 
 import (
 	"time"
+
+	"github.com/dehwyy/tracerfx/pkg/tracer/log"
 )
 
 func (s *dspan) End() {
 	s.TraceSpan.End()
+
+	if s.fast && !log.DebugEnabled(s.Logger) {
+		return
+	}
 
 	s.Mu.Lock()
 	defer s.Mu.Unlock()
@@ -17,9 +23,7 @@ func (s *dspan) End() {
 		"duration_ms", duration.Milliseconds(),
 	}
 
-	for k, v := range s.Attributes {
-		args = append(args, k, v)
-	}
+	args = s.appendAttributeArgs(args)
 
 	s.Logger.Debug("Span ended", args...)
 }

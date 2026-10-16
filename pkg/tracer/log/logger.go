@@ -71,13 +71,9 @@ func ContextWithLogger(ctx context.Context, logger Logger) context.Context {
 }
 
 func FromContext(ctx context.Context) Logger {
+	l := contextLogger(ctx)
 	if ctx == nil {
-		return Default()
-	}
-
-	l, ok := ctx.Value(loggerContextKey{}).(Logger)
-	if !ok || l == nil {
-		l = Default()
+		return l
 	}
 
 	sc := trace.SpanContextFromContext(ctx)
@@ -85,7 +81,7 @@ func FromContext(ctx context.Context) Logger {
 		return l
 	}
 
-	if bound, ok := l.(*spanLogger); ok && bound.traceID == sc.TraceID() && bound.spanID == sc.SpanID() {
+	if _, traceID, spanID, bound := boundSpan(l); bound && traceID == sc.TraceID() && spanID == sc.SpanID() {
 		return l
 	}
 

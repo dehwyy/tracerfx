@@ -21,6 +21,15 @@ func (s *dspan) WithAttribute(key string, value any) *dspan {
 	s.Mu.Lock()
 	defer s.Mu.Unlock()
 
+	if s.deferred {
+		s.appendPending(
+			key,
+			value,
+		)
+
+		return s
+	}
+
 	extracted := extractFields(key, value)
 
 	for k, v := range extracted {

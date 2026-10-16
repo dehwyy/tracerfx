@@ -1,9 +1,13 @@
 package log
 
-import "go.uber.org/zap"
+import (
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+)
 
 type zapLogger struct {
 	logger *zap.SugaredLogger
+	core   zapcore.Core
 }
 
 func NewZapLogger(logger *zap.Logger) Logger {
@@ -14,7 +18,10 @@ func NewZapLogger(logger *zap.Logger) Logger {
 		}
 		logger = production
 	}
-	return &zapLogger{logger: logger.Sugar()}
+	return &zapLogger{
+		logger: logger.Sugar(),
+		core:   logger.Core(),
+	}
 }
 
 func (z *zapLogger) Debug(msg string, args ...any) {
@@ -36,5 +43,6 @@ func (z *zapLogger) Error(msg string, args ...any) {
 func (z *zapLogger) With(args ...any) Logger {
 	return &zapLogger{
 		logger: z.logger.With(normalizeFields(args)...),
+		core:   z.core,
 	}
 }
