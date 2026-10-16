@@ -139,6 +139,51 @@ traceID := span.TraceID()
 fmt.Printf("Current Trace ID: %s\n", traceID)
 ```
 
+### Cheap spans for unsampled traces: TRACERFX_DSPAN_FAST
+
+At a sample ratio below 1 most spans are recorded but never exported. `TRACERFX_DSPAN_FAST=on` (`on|off`, read once, default off, any other value means off) makes `dspan.Start` cheap for them. With the env off nothing changes.
+
+- the SDK tracer is cached per provider instead of being looked up in the global provider on every `Start`.
+- the span logger is lazy: the `trace_id` / `span_id` binding is built when the first line is written, not at `Start`.
+- `WithAttribute` and `Attr` on a span that is not sampled keep the raw values and do not run the reflection that extracts struct fields. They are expanded only when the span ends with an unexpected error, so the exported Error span carries the same attributes as before. An expected error on such a span is a Debug line only, without the `error.expected` attribute: that span is never exported.
+- the `Span started` / `Span ended` Debug lines and the `span_caller` lookup run only when the logger has Debug enabled (`log.DebugEnabled`).
+- sampled spans keep the old behaviour except for the cached tracer, the lazy logger and the Debug gating.
+- a struct passed by pointer and changed between `WithAttribute` and `Err` appears with the new values in the error line and in the exported attributes of an unsampled span.
+- after `Provider.Stop` the cached SDK tracer still creates spans, without processors; they are never exported.
+
+Logger helpers added for this: `log.DebugEnabled(l)` and the optional interface `log.DebugEnabler` (zerolog and zap loggers and span loggers implement it; a foreign `Logger` counts as enabled), `log.LazyFromContext(ctx, sc)` and `log.NewLazySpanLogger(base, sc)`.
+
+### Batches: StartBatch, Link and TRACERFX_SPAN_DEPTH
+
+A worker that settles hundreds of items in one pass produces one trace with thousands of spans. `dspan.StartBatch` marks such a pass and `TRACERFX_SPAN_DEPTH` decides how much of it is recorded.
+
+```go
+ctx, batch := dspan.StartBatch(ctx, "batch.process", dspan.Attr("batch_size", len(items)))
+defer batch.End()
+
+for _, item := range items {
+    batch.Link(item.Ctx)
+
+    itemCtx, span := dspan.Start(ctx, "application.ledger.Settle")
+    // ...
+    span.End()
+}
+```
+
+`TRACERFX_SPAN_DEPTH` (read once; an unknown value is logged once as a warning and means `all`):
+
+- `all` (default): `StartBatch` equals `Start`, every span is a real span.
+- `app`: inside a batch, spans whose name starts with `infrastructure.` are light; `application.*`, `delivery.*` and the rest are real.
+- `batch`: inside a batch every `dspan.Start` is light, the trace holds the batch span only.
+
+A light span has no OTel span of its own. `Start` returns the same ctx, so `traceparent` that `nats.Inject*` and the gRPC interceptors write is the batch's. The logger is bound to the batch `trace_id` / `span_id`, `Logger` lines keep the usual fields. Light spans do not record attributes. An unexpected `Err` on a light span logs the Error line as before, records the exception event on the batch span and sets the batch status to Error, so with head sampling below 1 the batch is exported like any other Error span. An expected error is a Debug line only.
+
+- on `End` the batch span gets `batch.failed` (bool) and `batch.suppressed_spans` (int64, the number of light spans); only when a scope exists, so nothing at depth `all`.
+- the scope applies while ctx carries the batch `trace_id`. A ctx that carries another trace, for example one extracted from a message, gets a real span.
+- a nested `StartBatch` inside a scope behaves like `Start`. `StartBatch` on a non-recording provider returns a plain span without a scope.
+- `Link(ctx)` adds a link from the batch span to the span in ctx, so a batch trace opens the order traces it handled. Invalid span contexts, a nil ctx and a link to the batch itself are skipped, and the batch span holds at most 128 links. Called on a light span it links on the batch. Safe for concurrent use.
+- rollback: unset `TRACERFX_SPAN_DEPTH` or set it to `all`.
+
 ## Logger
 
 `log.Logger` wraps zerolog. Services do not import `rs/zerolog` or its global `log` package.

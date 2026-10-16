@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.4.0 (proposed)
+
+Added:
+- `TRACERFX_DSPAN_FAST` (read once, default off). Cheap `dspan.Start` for spans that are not sampled: cached SDK tracer, lazy span logger, raw attribute values expanded only on an unexpected `Err`, `Span started` / `Span ended` and `span_caller` only when Debug is enabled. The exported Error span of an unsampled trace carries the same attributes as before.
+- `log.DebugEnabled(l)`, `log.DebugEnabler`, `log.LazyFromContext(ctx, sc)`, `log.NewLazySpanLogger(base, sc)`.
+- `dspan.StartBatch(ctx, name, attrs...)` and `span.Link(ctx)`. `Link` adds a link from the span (a light span links on its batch) to the span in ctx, at most 128 per batch, invalid, nil and self links are skipped.
+- `TRACERFX_SPAN_DEPTH=all|app|batch` (read once, default `all`). Inside a batch started by `StartBatch`, `app` makes `infrastructure.*` spans light and `batch` makes every span light. A light span has no OTel span, shares the batch context and trace_id, and an unexpected `Err` on it logs the Error line, records the exception on the batch span and sets the batch status to Error. The batch span gets `batch.failed` and `batch.suppressed_spans` on `End`. An unknown value is logged once and means `all`.
+
+Fixed:
+- none.
+
+No breaking changes. Without the two envs nothing changes. Rollback: unset them or set `TRACERFX_DSPAN_FAST=off` and `TRACERFX_SPAN_DEPTH=all`.
+
 ## v0.3.0 (proposed)
 
 Added:
