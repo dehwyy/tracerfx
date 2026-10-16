@@ -133,14 +133,20 @@ func TestSamplerRatioOneIsAlwaysSample(t *testing.T) {
 	)
 }
 
-func TestSamplerRatioZeroDropsRoots(t *testing.T) {
+func TestSamplerRatioZeroRecordsRootsUnsampled(t *testing.T) {
 	sampler := newSampler(0)
 
 	for seed := uint64(0); seed < 200; seed++ {
+		result := sampler.ShouldSample(
+			samplingParams(
+				trace.SpanContext{},
+				randomTraceID(seed),
+			),
+		)
 		require.Equal(
 			t,
-			tracesdk.Drop,
-			sampler.ShouldSample(samplingParams(trace.SpanContext{}, randomTraceID(seed))).Decision,
+			tracesdk.RecordOnly,
+			result.Decision,
 		)
 	}
 }
@@ -156,7 +162,7 @@ func TestSamplerRatioFollowsParent(t *testing.T) {
 		)
 		require.Equal(
 			t,
-			tracesdk.Drop,
+			tracesdk.RecordOnly,
 			sampler.ShouldSample(samplingParams(remoteParent(false), randomTraceID(seed))).Decision,
 		)
 	}
@@ -187,6 +193,10 @@ func TestProviderStartUsesSampleRatio(t *testing.T) {
 	for i := 0; i < 50; i++ {
 		_, span := otel.Tracer("test").Start(context.Background(), "root")
 		require.False(t, span.SpanContext().IsSampled())
+		require.True(
+			t,
+			span.IsRecording(),
+		)
 		span.End()
 	}
 }

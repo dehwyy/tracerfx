@@ -73,7 +73,12 @@ func (p *Provider) Start(ctx context.Context) error {
 	p.provider = tracesdk.NewTracerProvider(
 		append(
 			[]tracesdk.TracerProviderOption{
-				tracesdk.WithBatcher(p.exporter),
+				tracesdk.WithSpanProcessor(
+					newBatcher(
+						p.exporter,
+						p.options.sampleRatio,
+					),
+				),
 				tracesdk.WithResource(res),
 				tracesdk.WithSampler(newSampler(p.options.sampleRatio)),
 			}, p.options.tracerProviderOptions...,

@@ -52,5 +52,11 @@ func newSampler(ratio float64) tracesdk.Sampler {
 		return tracesdk.AlwaysSample()
 	}
 
-	return tracesdk.ParentBased(tracesdk.TraceIDRatioBased(ratio))
+	unsampled := newRecordOnlySampler(tracesdk.NeverSample())
+
+	return tracesdk.ParentBased(
+		newRecordOnlySampler(tracesdk.TraceIDRatioBased(ratio)),
+		tracesdk.WithRemoteParentNotSampled(unsampled),
+		tracesdk.WithLocalParentNotSampled(unsampled),
+	)
 }
